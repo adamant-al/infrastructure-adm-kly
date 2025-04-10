@@ -1,0 +1,20 @@
+- name: Create grafana docker-compose directory
+  file:
+    path: /root/grafana
+    state: directory
+  tags:
+    - rerun_grafana
+
+- name: Copy docker-compose files to server
+  copy:
+    src: "{{ role_path }}/files/"
+    dest: /root/grafana/
+  tags:
+    - rerun_grafana
+
+- name: Run docker-compose
+  community.docker.docker_compose_v2:
+    project_src: /root/grafana
+    state: present
+  tags:
+    - rerun_grafana

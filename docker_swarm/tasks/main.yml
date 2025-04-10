@@ -1,0 +1,38 @@
+- name: Init Swarm
+  community.docker.docker_swarm:
+    state: present
+    advertise_addr: "{{ ansible_host }}"
+  register: result
+  when: inventory_hostname == groups['master_server'][0]
+
+- name: Get join-token for worker nodes
+  set_fact:
+    join_token_worker: "{{ hostvars[groups['master_server'][0]].result.swarm_facts.JoinTokens.Worker }}"
+
+- name: Join workers
+  community.docker.docker_swarm:
+    state: join
+    join_token: "{{ join_token_worker }}"
+    advertise_addr: "{{ ansible_host }}"
+    remote_addrs: "{{ hostvars[groups['master_server'][0]].ansible_host }}"
+  when:
+    - inventory_hostname in groups['slave_servers']
+
+- name: Create overlay network for Loki
+  community.docker.docker_network:
+    name: loki_network
+    driver: overlay
+    attachable: yes
+    scope: global
+  when: inventory_hostname == groups['master_server'][0]
+  tags:
+    - network
+
+- name: Remove overlay network
+  when: inventory_hostname in groups['slave_servers']
+  docker_network:
+    name: loki_network
+    state: absent
+  tags:
+    - never
+    - network_remove

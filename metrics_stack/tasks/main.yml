@@ -1,0 +1,63 @@
+- name: Create docker-compose directory for metrics_stack
+  file:
+    path: /root/metrics_stack
+    state: directory
+
+- name: Copy docker-compose files to server
+  copy:
+    src: "{{ role_path }}/files/"
+    dest: /root/metrics_stack/
+
+- name: Read hostname from /etc/hostname
+  command: cat /etc/hostname
+  register: hostname_output
+
+- name: Create and write to .env file
+  copy:
+    content: "HOSTNAME={{ hostname_output.stdout }}"
+    dest: "/root/metrics_stack/.env"
+
+- name: Create Promtail container
+  docker_container:
+    name: promtail
+    image: grafana/promtail:latest
+    state: started
+    restart_policy: always
+    volumes:
+      - /root/metrics_stack/promtail.yaml:/etc/promtail/docker-config.yaml
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: -config.file=/etc/promtail/docker-config.yaml -config.expand-env=true
+    env_file: /root/metrics_stack/.env
+    detach: true
+    labels:
+      loki_job: promtail
+  tags:
+    - rerun_promtail
+
+- name: Connect Promtail to loki network
+  command: docker network connect loki_network promtail
+  tags:
+    - rerun_promtail
+
+- name: Deploy stack from a compose file
+  command: docker stack deploy -c /root/metrics_stack/docker-compose.yml metrics_stack
+  when: inventory_hostname == groups['master_server'][0]
+
+- name: Stop container
+  community.docker.docker_container:
+    name: promtail
+    image: grafana/promtail:latest
+    state: stopped
+  tags:
+    - never
+    - reset_promtail
+
+- name: Remove container
+  community.docker.docker_container:
+    name: promtail
+    image: grafana/promtail:latest
+    state: absent
+  tags:
+    - never
+    - reset_promtail

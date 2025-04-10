@@ -1,0 +1,92 @@
+- name: Clone klayr-core
+  git:
+    repo: 'https://github.com/klayrHQ/klayr-core.git'
+    dest: /root/klayr-core
+    version: 'hotfix/missing-blocks-end-of-the-round-issue'
+    update: yes
+    force: true
+
+##### HOTFIX
+# On hotfix/missing-blocks-end-of-the-round-issue branch yarn.lock file was removed -> Dockerfile image build is failing because of it
+- name: Copy yarn.lock
+  copy:
+    src: "{{ role_path }}/files/yarn.lock"
+    dest: /root/klayr-core/yarn.lock
+    mode: '0644'
+#### HOTFIX
+# Dockerfile is broken (it uses alpine) so we replace fixed Dockerfile with debian image as base
+
+- name: Copy Dockerfile
+  copy:
+    src: "{{ role_path }}/files/Dockerfile"
+    dest: /root/klayr-core/docker/Dockerfile
+    mode: '0644'
+
+- name: Build Docker image
+  community.docker.docker_image:
+    name: klayr/core:latest
+    build:
+      path: /root/klayr-core
+      dockerfile: /root/klayr-core/docker/Dockerfile
+      nocache: true
+    source: build
+
+- name: Create klayr_app volume
+  docker_volume:
+    name: klayr_app
+    state: present
+
+- name: Create klayr_data volume
+  docker_volume:
+    name: klayr_data
+    state: present
+
+- name: Download snapshot
+  docker_container:
+    name: klayr_core
+    image: klayr/core:latest
+    command: blockchain download --url https://klayr-static.s3.eu-central-1.amazonaws.com/klayr-blockchain-2025-02-05.tar.gz --output=/klayr/.klayr/tmp
+    volumes:
+      - klayr_app:/klayr
+      - klayr_data:/root/.klayr
+    detach: false
+    tty: true
+
+- name: Import snapshot
+  docker_container:
+    name: klayr_core
+    image: klayr/core:latest
+    command: blockchain import /klayr/.klayr/tmp/klayr-blockchain-2025-02-05.tar.gz --force
+    volumes:
+      - klayr_app:/klayr
+      - klayr_data:/root/.klayr
+    detach: false
+    tty: true
+
+- name: Start klayr-core container
+  docker_container:
+    name: klayr_core
+    image: klayr/core:latest
+    state: started
+    restart_policy: always
+    ports:
+      - 7887:7887
+      - 8778:8778
+    volumes:
+      - klayr_app:/klayr
+      - klayr_data:/root/.klayr
+    command: start --network=mainnet
+  tags:
+    - rerun_klayr
+
+
+- name: Remove container
+  community.docker.docker_container:
+    name: klayr_core
+    state: stopped
+    image: klayr/core:latest
+  notify:
+    - Remove klayr_core container
+  tags:
+    - never
+    - reset_klayr

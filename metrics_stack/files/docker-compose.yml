@@ -1,0 +1,49 @@
+services:
+  node_exporter:
+    image: prom/node-exporter:v1.3.1
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+    networks:
+      - loki_network
+    labels:
+      prometheus_job: node_exporter
+      prometheus_metrics_port: 9100
+    restart: always
+    deploy:
+      labels:
+        prometheus_job: node_exporter
+        prometheus_metrics_port: 9100
+      mode: global
+      restart_policy:
+        condition: any
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.45.0
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    networks:
+      - loki_network
+    labels:
+      prometheus_job: cadvisor
+      prometheus_metrics_port: 8080
+    restart: always
+    deploy:
+      labels:
+        prometheus_job: cadvisor
+        prometheus_metrics_port: 8080
+      mode: global
+      restart_policy:
+        condition: any
+
+networks:
+  loki_network:
+    external: true

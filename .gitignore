@@ -1,0 +1,6 @@
+# Editor
+.idea/
+.vscode/
+# Host inventory files
+inventory.ini
+

@@ -1,0 +1,35 @@
+- name: Update system, install and run Docker on Ubuntu
+  hosts: all
+  become: true
+  roles:
+    - bootstrap
+
+- name: Create Docker Swarm Cluster
+  hosts: master_server, slave_servers
+  become: true
+  roles:
+    - docker_swarm
+
+- name: Install and run Klayr node
+  hosts: klayr_nodes
+  become: true
+  roles:
+    - klayr_node
+
+- name: Install and run Adamant node
+  hosts: adamant_nodes
+  become: true
+  roles:
+    - adamant_node
+
+- name: Install and run Grafana
+  hosts: master_server
+  become: true
+  roles:
+    - grafana
+
+- name: Install and run metrics_stack
+  hosts: all
+  become: true
+  roles:
+    - metrics_stack

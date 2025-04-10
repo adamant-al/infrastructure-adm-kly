@@ -1,0 +1,59 @@
+services:
+  loki:
+    image: grafana/loki:latest
+    user: "root"
+    volumes:
+      - ./loki-config.yaml:/etc/loki/loki-config.yaml
+      - loki_data:/tmp/loki
+    restart: always
+    command: -config.file=/etc/loki/loki-config.yaml
+    networks:
+      - loki_network
+      - grafana
+  prometheus:
+    image: prom/prometheus:latest
+    user: root
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus.web.yml:/etc/prometheus/prometheus.web.yml
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--web.config.file=/etc/prometheus/prometheus.web.yml"
+      - "--storage.tsdb.path=/prometheus"
+    networks:
+      - loki_network
+      - grafana
+    restart: always
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=T6016Pn61nRp
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml
+      - ./grafana/datasource.yaml:/etc/grafana/provisioning/datasources/datasource.yml
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    networks:
+      - loki_network
+      - grafana
+    restart: always
+
+volumes:
+  loki_data:
+    driver: local
+  grafana_data:
+    driver: local
+  prometheus_data:
+    driver: local
+
+networks:
+  loki_network:
+    external: true
+  grafana:
+    driver: bridge

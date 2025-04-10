@@ -1,0 +1,11 @@
+- name: Stop adamant_node container
+  community.docker.docker_container:
+    name: adamant_node
+    image: adamant:latest
+    state: stopped
+
+- name: Remove adamant_node container
+  community.docker.docker_container:
+    name: adamant_node
+    image: adamant:latest
+    state: absent

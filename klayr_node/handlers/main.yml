@@ -1,0 +1,11 @@
+- name: Stop klayr_core container
+  community.docker.docker_container:
+    name: klayr_core
+    image: klayr/core:latest
+    state: stopped
+
+- name: Remove klayr_core container
+  community.docker.docker_container:
+    name: klayr_core
+    image: klayr/core:latest
+    state: absent
