@@ -29,7 +29,6 @@ RUN service postgresql start && \
     su - postgres -c "psql -U postgres --command \"CREATE DATABASE adamant_main OWNER adamant;\"" && \
     service postgresql stop
 
-
 USER root
 
 WORKDIR /app

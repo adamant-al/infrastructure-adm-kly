@@ -3,4 +3,5 @@
 .vscode/
 # Host inventory files
 inventory.ini
+inventory.fix_adm.ini
 

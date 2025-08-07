@@ -1,0 +1,5 @@
+- name: Install and run Adamant node
+  hosts: adamant_nodes
+  become: true
+  roles:
+    - adamant_node
