@@ -1,0 +1,47 @@
+# adamant_node/tasks/rollback.yml
+
+- name: Stop adamant_node container if running
+  community.docker.docker_container:
+    name: adamant_node
+    state: stopped
+  ignore_errors: true
+
+- name: Remove adamant_node container
+  community.docker.docker_container:
+    name: adamant_node
+    state: absent
+  ignore_errors: true
+
+- name: Remove adamant Docker image
+  community.docker.docker_image:
+    name: adamant:latest
+    state: absent
+  ignore_errors: true
+
+- name: Remove adamant app volume
+  docker_volume:
+    name: adamant_app
+    state: absent
+  ignore_errors: true
+
+- name: Remove adamant postgres volume
+  docker_volume:
+    name: adamant_postgres
+    state: absent
+  ignore_errors: true
+
+- name: Remove Dockerfile from server
+  file:
+    path: /tmp/Dockerfile
+    state: absent
+  ignore_errors: true
+
+- name: Clean up any remaining adamant files
+  file:
+    path: "{{ item }}"
+    state: absent
+  ignore_errors: true
+  loop:
+    - /tmp/db_backup.sql
+    - /tmp/db_backup.sql.gz
+  

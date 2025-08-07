@@ -80,6 +80,14 @@ When changing `/etc/hostname`:
    ansible-playbook -i inventory.ini playbook.yml
    ```
 
+## Re-installing ADAMANT nodes
+
+1. Run the playbook:
+
+   ```bash
+   ansible-playbook -i inventory.fix_adm.ini playbook.fix_adm.yml
+   ```
+
 ## Security
 
 - All configuration files contain example settings

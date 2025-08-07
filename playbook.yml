@@ -20,7 +20,8 @@
   hosts: adamant_nodes
   become: true
   roles:
-    - adamant_node
+    - role: adamant_node
+      tags: install
 
 - name: Install and run Grafana
   hosts: master_server
